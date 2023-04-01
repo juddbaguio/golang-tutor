@@ -2,75 +2,41 @@ package main
 
 import "log"
 
-type Employee interface {
-	WhoAmI()
+// O(1) -> Good as line by line
+func O1_Function() {
+	name := "Jim Xel"
+	name2 := "Jim Xel"
+	log.Println(name)
+	log.Println(name2)
 }
 
-type HR struct {
-	Employees []Employee
+// O(N) -> best example: loops
+func O_N_Function(n int) {
+	log.Println("Starting Function")
+	for i := 0; i < n; i++ {
+		log.Println(i)
+	}
+
+	for i := 0; i < n; i++ {
+		log.Println(i)
+	} // O(N + N) = O(2N) => O(N)
+
+	log.Println("ending the function")
 }
 
-func (hr *HR) AddEmployee(employee Employee) {
-	hr.Employees = append(hr.Employees, employee)
-}
-
-func (hr *HR) IntroduceEmployees() {
-	for _, employee := range hr.Employees {
-		employee.WhoAmI()
+// O(N^2) -> loop within a loop
+func O_N_Sqrd_Function(i, j int) {
+	for a := 0; a < i; a++ {
+		for b := 0; b < j; b++ {
+			log.Println(a, b)
+		} // O(i*j) => O(N^2)
 	}
 }
 
-type Person struct {
-	Name string
-	Age  int
-}
-
-type Doctor struct {
-	Person
-}
-
-func (d Doctor) WhoAmI() {
-	log.Printf("My name is %s and I am %d year(s) old. My role is doctor.\n", d.Name, d.Age)
-}
-
-type Engineer struct {
-	Person
-}
-
-func (e Engineer) WhoAmI() {
-	log.Printf("My name is %s and I am %d year(s) old. My role is engineer.\n", e.Name, e.Age)
-}
-
-type Lawyer struct {
-	Person
-}
-
-func (l Lawyer) WhoAmI() {
-	log.Printf("My name is %s and I am %d year(s) old. My role is lawyer.\n", l.Name, l.Age)
-}
-
 func main() {
-	var hr HR = HR{}
-	hr.AddEmployee(Doctor{
-		Person: Person{
-			Name: "Judd",
-			Age:  26,
-		},
-	})
+	// O(1) example
+	// O1_Function()
 
-	hr.AddEmployee(Lawyer{
-		Person: Person{
-			Name: "Jim",
-			Age:  26,
-		},
-	})
-
-	hr.AddEmployee(Engineer{
-		Person: Person{
-			Name: "Xel",
-			Age:  26,
-		},
-	})
-
-	hr.IntroduceEmployees()
+	// O_N_Function(5)
+	O_N_Sqrd_Function(1000, 1000)
 }
