@@ -1,2 +1,2 @@
 // Assignment:
-// Research more about Go Concurrency Patterns
+// Solve Two Crystal Balls Problem
