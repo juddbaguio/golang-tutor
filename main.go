@@ -1,42 +1,92 @@
 package main
 
-import "log"
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+	"os"
 
-// O(1) -> Good as line by line
-func O1_Function() {
-	name := "Jim Xel"
-	name2 := "Jim Xel"
-	log.Println(name)
-	log.Println(name2)
+	"github.com/go-chi/chi/v5"
+)
+
+type SampleHandler struct{}
+
+func (sh *SampleHandler) HelloWorld(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("hello world")) // sending data to client
 }
 
-// O(N) -> best example: loops
-func O_N_Function(n int) {
-	log.Println("Starting Function")
-	for i := 0; i < n; i++ {
-		log.Println(i)
-	}
-
-	for i := 0; i < n; i++ {
-		log.Println(i)
-	} // O(N + N) = O(2N) => O(N)
-
-	log.Println("ending the function")
+func (sh *SampleHandler) WithStatusCode(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusCreated) // setting status code
+	w.Write([]byte("hello world"))
 }
 
-// O(N^2) -> loop within a loop
-func O_N_Sqrd_Function(i, j int) {
-	for a := 0; a < i; a++ {
-		for b := 0; b < j; b++ {
-			log.Println(a, b)
-		} // O(i*j) => O(N^2)
+func (sh *SampleHandler) WithContentType(w http.ResponseWriter, r *http.Request) {
+	simpleMap := map[string]interface{}{
+		"fullName": "Jim Xel Maghanoy",
+		"age":      25,
 	}
+
+	jsonByte, err := json.Marshal(&simpleMap)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonByte)
+}
+
+type PersonWithoutJSONTag struct {
+	FullName     string
+	Age          int
+	AnotherField bool
+}
+
+type PersonWithJSONTag struct {
+	FullName     string `json:"fullName"`
+	Age          int    `json:"age"`
+	AnotherField bool   `json:"-"` // this json tag will ignore when marshalling the field
+}
+
+func (sh *SampleHandler) WithJSONResponse(w http.ResponseWriter, r *http.Request) {
+	// person := PersonWithoutJSONTag{
+	// 	FullName:     "Jim Xel Maghanoy",
+	// 	Age:          25,
+	// 	AnotherField: true,
+	// }
+
+	person := PersonWithJSONTag{
+		FullName:     "Jim Xel Maghanoy",
+		Age:          25,
+		AnotherField: true,
+	}
+
+	jsonByte, err := json.Marshal(person)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonByte)
 }
 
 func main() {
-	// O(1) example
-	// O1_Function()
+	var sampleHandler *SampleHandler = &SampleHandler{}
 
-	// O_N_Function(5)
-	O_N_Sqrd_Function(1000, 1000)
+	router := chi.NewRouter()
+
+	router.Get("/", sampleHandler.HelloWorld)
+	router.Get("/status-code", sampleHandler.WithStatusCode)
+	router.Get("/content-type", sampleHandler.WithContentType)
+	router.Get("/json", sampleHandler.WithJSONResponse)
+
+	if err := http.ListenAndServe("127.0.0.1:8080", router); err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
 }
