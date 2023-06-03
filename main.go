@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 )
 
 type SampleHandler struct{}
@@ -181,6 +182,17 @@ func main() {
 	// [DELETE] "/users"
 	// [DELETE] "/users/{userId}"
 
+	router.Use(cors.Handler(cors.Options{
+		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
+		AllowedOrigins: []string{"https://*", "http://*"},
+		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
+
 	router.Get("/", sampleHandler.HelloWorld)
 	router.Get("/hello-world/{name}", sampleHandler.HelloWorldUpgraded)
 	router.Get("/status-code", sampleHandler.WithStatusCode)
@@ -193,6 +205,7 @@ func main() {
 	router.Put("/json-body", sampleHandler.WithJSONBodyPayload)
 	router.Delete("/json-body", sampleHandler.WithJSONBodyPayload)
 	router.Patch("/json-body", sampleHandler.WithJSONBodyPayload)
+	router.Get("/websocket", sampleHandler.WebsocketHandler)
 
 	if err := http.ListenAndServe("127.0.0.1:8080", router); err != nil {
 		log.Println(err)
