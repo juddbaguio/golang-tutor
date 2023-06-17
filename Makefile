@@ -6,5 +6,6 @@ remove-postgres:
 
 run-postgres: install-postgres-docker remove-postgres
 	docker run --name biyaheroes-db -e POSTGRES_PASSWORD=123456 -e POSTGRES_USER=biyaheroes \
+	-v ${PWD}/postgresql:/var/lib/postgresql/data \
 	-e POSTGRES_DB=biyaheroes \
 	-p 5432:5432 -d postgres

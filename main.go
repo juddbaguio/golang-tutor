@@ -34,7 +34,7 @@ type User struct {
 func InsertRowToUsers(db *sql.DB, user User) error {
 	_, err := db.Exec(`
 	INSERT INTO users (first_name, last_name, username, password)
-	VALUES ($1, $2, $4, $3)
+	VALUES ($1, $2, $3, $4)
 	`, user.FirstName, user.LastName, user.Username, user.Password)
 	if err != nil {
 		return err
@@ -43,20 +43,49 @@ func InsertRowToUsers(db *sql.DB, user User) error {
 	return nil
 }
 
+func QueryUsers(db *sql.DB) (*[]User, error) {
+	var userList []User
+	rows, err := db.Query(`SELECT * FROM users`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var user User
+	for rows.Next() {
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Username, &user.Password); err != nil {
+			return nil, err
+		}
+
+		userList = append(userList, user)
+		user = User{}
+	}
+
+	return &userList, nil
+}
+
+func QueryUserByID(db *sql.DB, id int) (*User, error) {
+	var user User
+	row := db.QueryRow(`SELECT * FROM users WHERE id = $1`, id)
+
+	if err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Username, &user.Password); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func main() {
 	db := NewDB()
 	defer db.Close()
 
-	CreateTable(db)
-	err := InsertRowToUsers(db, User{
-		FirstName: "Jim Xel",
-		LastName:  "Maghanoy",
-		Username:  "jim123",
-		Password:  "123456",
-	})
+	// userList, err := QueryUsers(db)
 
+	user, err := QueryUserByID(db, 2)
 	if err != nil {
 		log.Println(err)
-		os.Exit(1)
+		return
 	}
+
+	// log.Println(*userList)
+	log.Println(*user)
 }
