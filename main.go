@@ -74,6 +74,10 @@ func QueryUserByID(db *sql.DB, id int) (*User, error) {
 	return &user, nil
 }
 
+func DeleteUser(db *sql.DB, id int) error {
+	return nil
+}
+
 func main() {
 	db := NewDB()
 	defer db.Close()
