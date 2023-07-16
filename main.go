@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"time"
 )
 
 func CreateTable(db *sql.DB) {
@@ -29,6 +30,7 @@ type User struct {
 	LastName  string
 	Username  string
 	Password  string
+	CreatedAt time.Time
 }
 
 func InsertRowToUsers(db *sql.DB, user User) error {
@@ -52,7 +54,7 @@ func QueryUsers(db *sql.DB) (*[]User, error) {
 	defer rows.Close()
 	var user User
 	for rows.Next() {
-		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Username, &user.Password); err != nil {
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Username, &user.Password, &user.CreatedAt); err != nil {
 			return nil, err
 		}
 
@@ -78,18 +80,71 @@ func DeleteUser(db *sql.DB, id int) error {
 	return nil
 }
 
+func InsertRowToUsersTX(tx *sql.Tx, user User) error {
+	_, err := tx.Exec(`
+	INSERT INTO users (first_name, last_name, username, password)
+	VALUES ($1, $2, $3, $4)
+	`, user.FirstName, user.LastName, user.Username, user.Password)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func QueryUsersTX(tx *sql.Tx) (*[]User, error) {
+	var userList []User
+	rows, err := tx.Query(`SELECT * FROM users`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var user User
+	for rows.Next() {
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Username, &user.Password, &user.CreatedAt); err != nil {
+			return nil, err
+		}
+
+		userList = append(userList, user)
+		user = User{}
+	}
+
+	return &userList, nil
+}
+
+func SimpleTx(db *sql.DB) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err := InsertRowToUsersTX(tx, User{
+		FirstName: "wowoweee2222",
+		LastName:  "revillame2",
+		Username:  "wowoweeeeee",
+		Password:  "1234567",
+	}); err != nil {
+		return err
+	}
+
+	userList, err := QueryUsersTX(tx)
+	if err != nil {
+		return err
+	}
+
+	log.Println(*userList)
+
+	tx.Commit()
+	return nil
+}
+
 func main() {
 	db := NewDB()
 	defer db.Close()
 
-	// userList, err := QueryUsers(db)
-
-	user, err := QueryUserByID(db, 2)
-	if err != nil {
+	if err := SimpleTx(db); err != nil {
 		log.Println(err)
 		return
 	}
-
-	// log.Println(*userList)
-	log.Println(*user)
 }
